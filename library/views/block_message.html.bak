@@ -1,0 +1,5 @@
+Dear {{=b.first_name}},
+Your reservation for {{=b.book}} has been made.
+
+Regards
+Libararian

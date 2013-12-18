@@ -1,0 +1,58 @@
+<html>
+	<head>
+		<title>FAQ</title>
+	</head>
+		<body style="background-color:orange">
+		<h1 style="text-align:center; text-decoration:underline">FAQ</h1>
+		Q1.How to create an account?
+			<br/>
+			<p style="color:brown">
+		ANS.Register through the login page.
+		</p> <br/>
+		Q2.How to search for book?
+			<p style="color:brown">
+			<br/> <br/>
+		ANS.The default search widget of the portal allows you to search for any book that is currently owned by the library.
+		</p> <br/>
+		Q3.How to view books of a particular type?	
+			<p style="color:brown">
+		<br/> <br/>
+		ANS.The search widget allow you to view the books of a particular type.
+		</p> <br/>
+		Q4.How to find the location of a particular book in the library?
+			<p style="color:brown">
+		<br/> <br/>
+		ANS.The search widget allow you to view the books of a particular type.
+		</p> <br/>
+		Q5.How to request for a new book?
+			<p style="color:brown">
+		<br/> <br/>
+		ANS.There's an option on your home page to request for a new book which requires the user to fill a form.
+		</p> <br/>
+		Q6.How to view the status of a book?
+			<p style="color:brown">
+		<br/> <br/>
+		ANS.The search widget provides this feature also.
+		</p> <br/>
+		Q7.How to find out the books I have issued and their respective due dates?
+			<p style="color:brown">
+		<br/> <br/>
+		ANS.There is a query given to the user which shows the books the user has issued and their respective due dates.
+		</p> <br/>
+		Q8.Is there anyway so that I can select my favourite topics?
+			<p style="color:brown">
+		<br/> <br/>
+		ANS.At the time of creating an account you will be given choices of various topics from which you can select your favourites.There is a query which serves this purpose.Your account will show the updates on these selected topics.
+		</p> <br/>
+		Q9.How to see the list of people who have made reservation on the same book as I have?
+			<p style="color:brown">
+		<br/> <br/>
+		ANS.The search widget shows the reservations on the book searched by the user.
+		</p> <br/>
+		Q10.What is the duration for which I can keep a book for a single issue?
+			<p style="color:brown">
+		<br/> <br/>
+		ANS.You can keep the book for 14 days from the date of issue.
+		</p> <br/>
+		</body>
+</html>

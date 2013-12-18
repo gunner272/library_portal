@@ -1,0 +1,3 @@
+{{extend 'layout.html'}}
+{{=SQLTABLE(query,truncate=None)}}
+{{=SQLTABLE(coms,truncate=None)}}

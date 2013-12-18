@@ -1,0 +1,3 @@
+{{extend 'layout.html'}}
+{{SQLTABLE(row,columns=[db.books.book_name,'author','publication_house','category','book_location','summary'])}}
+{{=BEAUTIFY(response._vars)}}

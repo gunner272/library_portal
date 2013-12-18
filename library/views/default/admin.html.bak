@@ -1,0 +1,39 @@
+{{extend 'layout.html'}}
+<!--<h1>This is the default/admin.html template</h1>  -->
+<!--{{=BEAUTIFY(response._vars)}} -->
+ <div class="container-fluid">
+    				<div class="row-fluid">
+    					<div class="span2">
+   							 <!--Sidebar content-->
+   							
+    					</div>
+    					<div class="span2">
+    						<!--Body content-->
+                            <button class="btn btn-large btn-success" type="button" onclick="window.location.href='{{=URL('block_mail')}}'">Send notification</button>
+                            <br/> <br/> <br/> <br/>
+    						 <button class="btn btn-large btn-success" type="button" onclick="window.location.href='{{=URL('extendduedate')}}'">extend due date</button>
+    					</div>
+   				 	<!--</div> -->
+   				 	<!--<div class="row-fluid">  -->
+    					<div class="span2">
+   							 <!--Sidebar content-->
+   							 <button class="btn btn-large btn-success" type="button" onclick="window.location.href='{{=URL('intakebook')}}'">answer request</button>
+    					</div>
+    					<div class="span2">
+    						<!--Body content-->
+    						<button class="btn btn-large btn-success" type="button" onclick="window.location.href='{{=URL('search')}}'">Search</button>
+    					</div>
+   				 	<!--</div> -->
+   				 <!--	<div class="row-fluid">  -->
+    					<div class="span2">
+   							 <!--Sidebar content-->
+   							 <button class="btn btn-large btn-success" type="button" onclick="window.location.href='{{=URL('insert_book')}}'">Add to inventory</button>
+                            <br/> <br/> <br/> <br/>
+   							 <button class="btn btn-large btn-success" type="button" onclick="window.location.href='{{=URL('admin')}}'">Go to home</button>
+    					</div>
+    					<div class="span2">
+    						<!--Body content-->
+    						
+    					</div>
+   				 	</div>
+ </div>

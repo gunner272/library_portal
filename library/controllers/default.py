@@ -1,0 +1,421 @@
+# -*- coding: utf-8 -*-
+# this file is released under public domain and you can use without limitations
+
+#########################################################################
+## This is a samples controller
+## - index is the default action of any application
+## - user is required for authentication and authorization
+## - download is for downloading files uploaded in the db (does streaming)
+## - call exposes all registered services (none by default)
+#########################################################################
+#db.books_issued.date_of_return<request.now+datetime.timedelta(days=4)
+from plugin_rating_widget import RatingWidget
+
+
+################################ The core ######################################
+# Inject the horizontal radio widget
+db.books.rating.widget = RatingWidget()
+################################################################################
+
+import datetime
+@auth.requires_login()  
+def blockmail():#sending emails on click of button
+    query=db(db.books_issued.user_rollno==db.auth_user.id and db.books_issued.date_of_return<request.now+datetime.timedelta(days=4) ).select(db.auth_user.email,db.auth_user.first_name,db.books_issued.book_name)
+    if(len(query)==0):
+        redirect("http://google.com")
+    for q in query:
+        inq=db(db.books.id==q.books_issued.book_name).select(db.books.book_name)
+        q.book=inq[0].book_name
+        context = dict(q=q)
+        message = response.render('message.html', context)
+        mail.send(to=[q.auth_user.email],
+              subject='Book Overdue',
+              message=message)
+    redirect(URL('admin'))
+              
+              
+@auth.requires_login()  
+def comms():
+    return dict()
+
+def faq():
+    return dict()      
+def extenddate():#auxilary function for extendduedate
+    myid=int(request.args(0))##not checked
+    form = SQLFORM.factory(Field('newdate','datetime',db.books_issued,required=True,label='select extend date '))
+    if form.accepts(request.vars,session):
+        db(db.books_issued.id == myid).update(date_of_return =form.vars.newdate)
+    elif form.errors:
+        response.flash='Errors in form'
+#if form:
+    return dict(form=form)
+@auth.requires_login()    
+def extendduedate():# extends due date ,admin function
+    links = [lambda row: A('Extend due date',_href=URL("extenddate",args=[row.id]))]
+    grid=SQLFORM.grid(db.books_issued,links=links)
+    return locals()
+
+@auth.requires_login()        
+
+
+def reqbook():#request for new book in the library
+    reqform=SQLFORM(db.request_book)
+    if reqform.accepts(request.vars):
+        response.flash="request made succesfully"
+    elif reqform.errors:
+        response.flash("erros in the form")
+    return dict(reqform=reqform)
+
+def intakebook():#admin answering request according to his discretion
+    links = [lambda row: A('Buy Book',_href=URL("insert_book",args=[row.id,3]))] # pre populate the form with values from grid# 3 rep intake called
+    grid=SQLFORM.grid(db.request_book,links=links)
+    return locals()
+    
+@auth.requires_login()        
+def cancelrev():# cancelling reservation made on a book
+    inset=set()
+    query=db(db.block_issue.user_rollno==auth.user.id).select(db.block_issue.book_name)
+    for w in query:
+        ar=db(w.book_name==db.books.id).select(db.books.book_name)
+        inset.add(ar[0].book_name)
+    form = SQLFORM.factory(Field('name','string',db.block_issue,requires=IS_IN_SET(inset),required=True,label='select bookname '))
+    if form.accepts(request.vars,session):
+        rem=db(form.vars.name==db.books.book_name and db.block_issue.book_name==db.books.id and db.block_issue.user_rollno==auth.user.id).select(db.block_issue.id)
+        db(rem[0].id==db.block_issue.id).delete()
+    elif form.errors:
+        response.flash='Errors in form'
+#if form:
+    return dict(form=form)
+    #else:
+    #    redirect("http://www.google.com")
+
+    
+@auth.requires_login()                
+def showmyissues():# auxilary function for showing issues made by user
+     query=db((db.books_issued.user_rollno==auth.user.id) & (db.books.id==db.books_issued.book_name)).select(db.books.book_name)
+     return dict(query=query)      
+def admin():
+    return dict()
+    
+@auth.requires_login()                
+def myuser():# normal user main page
+    q=db((db.books_issued.user_rollno==auth.user.id) &
+      (db.books.id==db.books_issued.book_name)).select(db.books.book_name,db.books_issued.date_of_issue,db.books_issued.date_of_return)
+    likes=db(db.auth_user.id==auth.user.id).select(db.auth_user.preference_1,db.auth_user.preference_2,db.auth_user.preference_3
+           ,db.auth_user.preference_4,db.auth_user.preference_5)
+    for w in likes:
+        inside=[w.preference_1,w.preference_2,w.preference_3,w.preference_4,w.preference_5]
+    #inside=set(inside)
+    query=db((db.book_comment.book_name==db.books.id) & (db.books.category in inside)).select(db.books.book_name,db.book_comment.comment_on_book,
+           db.book_comment.comment_time,db.book_comment.commenting_user)
+    for a in query:
+           same=db(a.book_comment.commenting_user==db.auth_user.id).select(db.auth_user.first_name)
+           for abc in same:
+               a.first=abc.first_name
+           #db.book_comment.commenting_user==db.auth_user.id
+     
+    return dict(query=query,tmp=q)
+    
+
+def issue():## auxilary function used for issueing the book
+     arg1=int(request.args(0))
+     arg2=int(request.args(1))
+         
+     inquire=db(db.books_issued.user_rollno==auth.user.id).select()
+     if(len(inquire)<=2):
+         db.books_issued.insert(user_rollno=arg1,book_name=arg2)
+         db(db.books.id == arg2).update(availability =0)
+         session.flash="Book issued"
+     else:
+         session.flash="No more issues on this user can be made"
+     redirect(URL("index"))
+
+def block_request():# auxilary function used for making a request on the book the book mail also send to who has the book
+     arg1=int(request.args(0))
+     arg2=int(request.args(1))
+     inquire=db(db.block_issue.user_rollno==auth.user.id).select()
+     if(len(inquire)<=2):
+         db.block_issue.insert(user_rollno=arg1, book_name=arg2)
+         query=db(arg1==db.auth_user.id  ).select(db.auth_user.email,db.auth_user.first_name)
+         inq=db(db.books.id==arg2).select(db.books.book_name)
+         q=query[0]
+         q.book=inq[0].book_name
+         context = dict(q=q)
+         message = response.render('block_message.html', context)
+         mail.send(to=[q.email],subject='Book Reservation',message=message)
+         inquy=db(db.block_issue.book_name==arg2 and db.books.id==arg2 and db.auth_user.id==db.block_issue.user_rollno).select(db.auth_user.email,db.auth_user.first_name,db.books.book_name)
+         for b in inquy:
+             context = dict(b=b)
+             message = response.render('whohasbook.html', context)
+             mail.send(to=[q.email],subject='Book Reservation',message=message)
+         session.flash="Book request made"
+     else:
+         session.flash="No more issues on this user can be made"
+     redirect(URL("index"))
+                   
+def myfunc(row): #aux func
+     if(row.availability==1):
+         return A('Issue',_href=URL("issue",args=[auth.user.id,row.id])) 
+     else:
+         return A('block reservation',_href=URL("block_request",args=[auth.user.id,row.id])) 
+
+def reslist():# show who all have made reservation for list
+         query=db(db.block_issue.book_name==int(request.args(0)) and db.block_issue.user_rollno==db.auth_user.id).select(db.auth_user.rollno,db.auth_user.first_name,db.auth_user.email)
+         return dict(query=query)
+
+def rollingstones():## comments related func
+    likes=db(db.auth_user.id==auth.user.id).select(db.auth_user.preference_1,db.auth_user.preference_2,db.auth_user.preference_3
+           ,db.auth_user.preference_4,db.auth_user.preference_5)
+    for w in likes:
+        inside=[w.preference_1,w.preference_2,w.preference_3,w.preference_4,w.preference_5]
+    #inside=set(inside)
+    #if(len(inside)==0):
+    #    redirect("http://google.com")
+    
+    query=db((db.book_comment.book_name==db.books.id) & (db.books.category in inside)).select(db.books.book_name,db.book_comment.comment_on_book,
+           db.book_comment.comment_time,db.book_comment.commenting_user)
+    
+    for a in query:
+           same=db(a.book_comment.commenting_user==db.auth_user.id).select(db.auth_user.first_name)
+           for abc in same:
+               a.first=abc.first_name
+           #db.book_comment.commenting_user==db.auth_user.id
+    return dict(query=query)
+                  
+                  
+def insertcomments():# auxilary function used for commenting
+    body=request.args(0)
+    myid=int(request.args(1))
+    db.book_comment.insert(book_name=myid,commenting_user=auth.user.id,comment_on_book=body,comment_time=request.now)
+    redirect(URL("comments",args=[myid]))
+    return dict(query=query,form=form)
+
+
+def comments():
+     my=int(request.args(0))
+     form=SQLFORM.factory(Field('combody','string',requires=IS_NOT_EMPTY(),label="U want to say"))#Recaptcha(request,
+    #'6Ldt0t4SAAAAANR-uOP_LPZiUAsRk9CVK1AcWwFr', '6Ldt0t4SAAAAAMigT-0uRVyuiZIKCXLBIY_YGYdi'))
+     query=db(db.books.id==my).select(db.books.summary)
+     coms=db(db.book_comment.book_name==my).select(db.book_comment.comment_on_book,db.book_comment.comment_time,orderby=~db.book_comment.comment_time)
+     if form.accepts(request.vars,session):
+            redirect(URL('insertcomments',args=[form.vars.combody,my]))
+     elif form.errors:
+        response.flash='Errors in form'
+     return dict(form=form,query=query,coms=coms)
+    
+#query=db(db.book_comment.book_name==myid).select()
+    
+#{{SQLTABLE(query,columns['commenting_user','comment_on_book']),headers={commenting_users:'WHO',comment_on_book:"C
+#columns['book_name','author','publication_house','category','book_location','summary']
+    
+def rate(): #function which helps in rating a book
+    myid=int(request.args(0))
+    query=db(db.book_comment.book_name==myid).select(db.book_comment.comment_on_book)
+    summ=db(db.books.id==myid).select(db.books.summary)
+    db.books.book_name.writable=False
+    db.books.author.writable=False
+    db.books.publication_house.writable=False
+    db.books.category.writable=False
+    db.books.sub_category.writable=False
+    db.books.book_location.writable=False
+    db.books.summary.writable=False
+    db.books.book_name.readable=False
+    db.books.author.readable=False
+    db.books.publication_house.readable=False
+    db.books.category.readable=False
+    db.books.sub_category.readable=False
+    db.books.book_location.readable=False
+    db.books.summary.readable=False
+    db.books.availability.readable=False
+    db.books.availability.writable=False
+    db.books.reference.readable=False
+    db.books.reference.writable=False
+    
+    form = SQLFORM(db.books)
+    if form.validate():
+            w=db(db.books.id==myid).select(db.books.rating,db.books.noofrating,db.books.am)
+            for abcd in w:
+                b=abcd.noofrating+1
+            db(db.books.id==myid).update(rating=form.vars.rating,noofrating=b)
+            q=db(db.books.id==myid).select()
+            for efgh in q:
+                a=(efgh.am)+int(form.vars.rating)/(efgh.noofrating)
+            db(db.books.id==myid).update(am=a)
+    elif form.errors:
+        response.flash='Errors in form'
+    return dict(form=form,query=query,summ=summ)
+    
+@auth.requires_login()
+def search():# main search via grid  with links
+   db.books.am.readable=True
+   db.books.rating.readable=False
+   db.books.am.label='Rating'
+   links = [(lambda row: myfunc(row)),(lambda row:A('comments',_href=URL("comments",args=[row.id]))),(lambda row:A('reslist',_href=URL("reslist",args=[row.id]))),(lambda row:A('Rate',_href=URL("rate",args=[row.id])))]
+   disp=SQLFORM.grid(db.books,links=links,editable=False,deletable=False)
+    
+   return locals()
+
+    
+@auth.requires_login()
+##To be called by admin only when logged in and pre-populates according to which controller calls it
+def insert_book():
+   db.books.rating.readable=False
+   db.books.rating.writable=False                        
+   form = SQLFORM(db.books)
+   if len(request.args)!=0:
+       temp=int(request.args(0))
+       item=db(db.request_book.id==temp).select()
+       db(db.request_book.id==temp).delete()                           ##deletion from request_table being done
+       for w in item:
+           form.vars.book_name=w.book_name
+           form.vars.author=w.author
+           form.vars.publication_house=w.publication_house              ##point out pre-populate
+   if form.validate():
+       if form.vars.category=="general knowledge" and form.vars.sub_category=="sports":
+           form.vars.book_location=101
+       elif form.vars.category=="general knowledge" and form.vars.sub_category=="current affairs":
+           form.vars.book_location=102
+       elif form.vars.category=="general knowledge" and form.vars.sub_category=="entertainment":
+           form.vars.book_location=103
+       elif form.vars.category=="general knowledge" and form.vars.sub_category=="technology":
+           form.vars.book_location=104
+       elif form.vars.category=="religion" and form.vars.sub_category=="hindu":
+           form.vars.book_location=201
+       elif form.vars.category=="religion" and form.vars.sub_category=="christian":
+           form.vars.book_location=202
+       elif form.vars.category=="religion" and form.vars.sub_category=="buddhism":
+           form.vars.book_location=203
+       elif form.vars.category=="religion" and form.vars.sub_category=="muslim":
+           form.vars.book_location=204
+       elif form.vars.category=="religion" and form.vars.sub_category=="parsi":
+           form.vars.book_location=205
+       elif form.vars.category=="religion" and form.vars.sub_category=="sikh":
+           form.vars.book_location=206
+       elif form.vars.category=="economics" and form.vars.sub_category=="macro":
+           form.vars.book_location=301
+       elif form.vars.category=="economics" and form.vars.sub_category=="micro":
+           form.vars.book_location=302
+       elif form.vars.category=="economics" and form.vars.sub_category=="statistics":
+           form.vars.book_location=303
+       elif form.vars.category=="maths" and form.vars.sub_category=="algebra":
+           form.vars.book_location=401
+       elif form.vars.category=="maths" and form.vars.sub_category=="number theory":
+           form.vars.book_location=402
+       elif form.vars.category=="maths" and form.vars.sub_category=="calculus":
+           form.vars.book_location=403
+       elif form.vars.category=="maths" and form.vars.sub_category=="geometry":
+           form.vars.book_location=404
+       elif form.vars.category=="physics" and form.vars.sub_category=="fluid mechanics":
+           form.vars.book_location=501
+       elif form.vars.category=="physics" and form.vars.sub_category=="optics":
+           form.vars.book_location=502
+       elif form.vars.category=="physics" and form.vars.sub_category=="thermodynamics":
+           form.vars.book_location=503
+       elif form.vars.category=="physics" and form.vars.sub_category=="electromagnetics":
+           form.vars.book_location=504
+       elif form.vars.category=="physics" and form.vars.sub_category=="quantum computing":
+           form.vars.book_location=505
+       elif form.vars.category=="english" and form.vars.sub_category=="poetry":
+           form.vars.book_location=601
+       elif form.vars.category=="english" and form.vars.sub_category=="drama":
+           form.vars.book_location=602
+       elif form.vars.category=="other languages" and form.vars.sub_category=="hindi":
+           form.vars.book_location=701
+       elif form.vars.category=="other languages" and form.vars.sub_category=="telegu":
+           form.vars.book_location=702
+       elif form.vars.category=="programming languages" and form.vars.sub_category=="c++":
+           form.vars.book_location=801
+       elif form.vars.category=="programming languages" and form.vars.sub_category=="java":
+           form.vars.book_location=802
+       elif form.vars.category=="programming languages" and form.vars.sub_category=="python":
+           form.vars.book_location=803
+       elif form.vars.category=="programming languages" and form.vars.sub_category=="perl":
+           form.vars.book_location=804
+       elif form.vars.category=="programming languages" and form.vars.sub_category=="php":
+           form.vars.book_location=805
+       elif form.vars.category=="programming languages" and form.vars.sub_category=="html":
+           form.vars.book_location=806
+       elif form.vars.category=="programming languages" and form.vars.sub_category=="xml":
+           form.vars.book_location=807
+       elif form.vars.category=="computer science" and form.vars.sub_category=="computer system organisation":
+           form.vars.book_location=111
+       elif form.vars.category=="computer science" and form.vars.sub_category=="network":
+           form.vars.book_location=112
+       elif form.vars.category=="computer science" and form.vars.sub_category=="security":
+           form.vars.book_location=113
+       form.vars.id = db.books.insert(**dict(form.vars))
+       response.flash = 'form accepted'
+       if(len(request.args)!=0):
+           redirect(URL('index'))
+   
+   elif form.errors:
+       response.flash = 'form has errors'
+   return dict(form=form)
+   
+@auth.requires_login()   
+def index(): 
+    if auth.has_membership("admin",auth.user.id):
+        redirect(URL('admin'))
+    else:
+        redirect(URL('myuser'))    
+    return dict()
+    
+
+def user():
+    """
+    exposes:
+    http://..../[app]/default/user/login
+    http://..../[app]/default/user/logout
+    http://..../[app]/default/user/register
+    http://..../[app]/default/user/profile
+    http://..../[app]/default/user/retrieve_password
+    http://..../[app]/default/user/change_password
+    use @auth.requires_login()
+        @auth.requires_membership('group name')
+        @auth.requires_permission('read','table name',record_id)
+    to decorate functions that need access control
+    """
+    return dict(form=auth())
+
+
+def download():
+    """
+    allows downloading of uploaded files
+    http://..../[app]/default/download/[filename]
+    """
+    return response.download(request, db)
+
+
+def call():
+    """
+    exposes services. for example:
+    http://..../[app]/default/call/jsonrpc
+    decorate with @services.jsonrpc the functions to expose
+    supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
+    """
+    return service()
+
+
+@auth.requires_signature()
+def data():
+    """
+    http://..../[app]/default/data/tables
+    http://..../[app]/default/data/create/[table]
+    http://..../[app]/default/data/read/[table]/[id]
+    http://..../[app]/default/data/update/[table]/[id]
+    http://..../[app]/default/data/delete/[table]/[id]
+    http://..../[app]/default/data/select/[table]
+    http://..../[app]/default/data/search/[table]
+    but URLs must be signed, i.e. linked with
+      A('table',_href=URL('data/tables',user_signature=True))
+    or with the signed load operator
+      LOAD('default','data.load',args='tables',ajax=True,user_signature=True)
+    """
+    return dict(form=crud())
+#from plugin_rating_widget import RatingWidget
+
+
+################################ The core ######################################
+# Inject the horizontal radio widget
+#db.books.rating.widget = RatingWidget()
+################################################################################

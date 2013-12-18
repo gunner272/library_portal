@@ -1,0 +1,17 @@
+{{extend 'layout.html'}}
+
+<div id="target"></div>
+
+<form id="myform">
+  <input name="your_message" id="your_message" />
+  <input type="submit" />
+</form>
+
+<script>
+jQuery('#myform').submit(function() {
+  ajax('{{=URL('postcom')}}',
+       ['your_message'], 'target');
+  return false;
+});
+</script>
+{{=BEAUTIFY(response._vars)}}

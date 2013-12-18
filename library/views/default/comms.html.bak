@@ -1,0 +1,17 @@
+{{extend 'layout.html'}}
+{{extend 'layout.html'}}
+
+<form id="myform">
+  <input name="your_message" id="your_message" value=''/>
+  <input type="submit" value='ris'/>
+</form>
+
+<div id="target"></div>
+<script>
+jQuery('#myform').submit(function() {
+  ajax('{{=URL('new_post')}}',
+       ['your_message'], 'target');
+  return false;
+});
+</script>
+{{=BEAUTIFY(response._vars)}}

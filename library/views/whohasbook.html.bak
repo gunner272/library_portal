@@ -1,0 +1,6 @@
+Dear {{=b.auth_user.first_name}},
+Reservation for {{=b.books.book_name}} issued to you has been made.
+Please return the book by the due date. 
+
+Regards
+Libararian

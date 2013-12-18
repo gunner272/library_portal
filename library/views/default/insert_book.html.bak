@@ -1,0 +1,11 @@
+{{extend 'layout.html'}}
+{{extend 'layout.html'}}
+<script>
+jQuery(document).ready(function(){
+   jQuery('#books_sub_category__row').hide();
+   jQuery('#books_category').change(function(){
+        if(jQuery('#books_category').attr()=="sports")
+            jQuery('#books_sub_category__row').show();
+});
+</script>
+{{=BEAUTIFY(response._vars)}}

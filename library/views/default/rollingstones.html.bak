@@ -1,0 +1,10 @@
+{{extend 'layout.html'}}
+ <div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<div class="fb-activity" data-site="http://127.0.0.1:8000"  data-width="[320]" data-height="[320]" data-header="true" data-colorscheme="dark" data-linktarget="_blank" data-border-color="red" data-font="verdana" data-recommendations="true" data-max_age="0"></div>
